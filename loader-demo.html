@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi App PWA - Con Polyfill</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .app-title {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+        }
+        
+        .sidebar {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .main-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .module-card {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .module-card.installed {
+            border-left-color: var(--success);
+        }
+        
+        .module-card.missing {
+            border-left-color: var(--danger);
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-installed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-missing {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        
+        .feature-card {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .console {
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin-top: 25px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .console-line {
+            margin-bottom: 8px;
+        }
+        
+        .console-success {
+            color: #34d399;
+        }
+        
+        .console-error {
+            color: #f87171;
+        }
+        
+        .console-warning {
+            color: #fbbf24;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f4f6;
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="app-title">🚀 Mi App PWA</h1>
+            <div>
+                <button class="btn btn-outline" onclick="openInstaller()">
+                    ⚙️ Gestionar Librerías
+                </button>
+                <button class="btn btn-primary" onclick="loadAllModules()">
+                    🔄 Cargar Módulos
+                </button>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="sidebar">
+                <h3>📦 Módulos Instalados</h3>
+                <div id="modules-list">
+                    <div class="loading"></div> Cargando...
+                </div>
+                
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                    <h4>📊 Estadísticas</h4>
+                    <div id="storage-stats">
+                        <div class="loading"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <h2>🎯 Panel de Control</h2>
+                <p>Gestiona y utiliza tus módulos instalados</p>
+                
+                <div class="feature-grid" id="features-grid">
+                    <!-- Características dinámicas se cargarán aquí -->
+                </div>
+                
+                <div id="app-content">
+                    <div class="console" id="app-console">
+                        <div class="console-line">💻 Consola de la aplicación lista...</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 25px; display: flex; gap: 15px; flex-wrap: wrap;">
+                    <button class="btn btn-outline" onclick="testMathModule()">
+                        🧮 Probar Math
+                    </button>
+                    <button class="btn btn-outline" onclick="testDOMModule()">
+                        🎨 Probar DOM
+                    </button>
+                    <button class="btn btn-outline" onclick="testStorageModule()">
+                        💾 Probar Storage
+                    </button>
+                    <button class="btn btn-outline" onclick="testHTTPModule()">
+                        🌐 Probar HTTP
+                    </button>
+                    <button class="btn btn-outline" onclick="clearConsole()">
+                        🗑️ Limpiar Consola
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      // Cargar el polyfill primero 
+// Polyfill para sistema de módulos ES6 con localStorage
+class ModuleSystem {
+    constructor() {
+        this.modules = new Map();
+        this.cache = new Map();
+        this.importPromises = new Map();
+        this.basePath = './modules/';
+        
+        // Exponer globalmente para debugging
+        window.ModuleSystem = this;
+    }
+
+    // Polyfill para import()
+    async import(moduleName) {
+        // Si ya está en cache, devolver inmediatamente
+        if (this.cache.has(moduleName)) {
+            return this.cache.get(moduleName);
+        }
+
+        // Si ya hay una promesa de import en curso, reutilizarla
+        if (this.importPromises.has(moduleName)) {
+            return this.importPromises.get(moduleName);
+        }
+
+        // Crear nueva promesa de import
+        const importPromise = this._loadModule(moduleName);
+        this.importPromises.set(moduleName, importPromise);
+
+        try {
+            const moduleExports = await importPromise;
+            this.cache.set(moduleName, moduleExports);
+            this.importPromises.delete(moduleName);
+            return moduleExports;
+        } catch (error) {
+            this.importPromises.delete(moduleName);
+            throw error;
+        }
+    }
+
+    // Cargar módulo desde localStorage
+    async _loadModule(moduleName) {
+        try {
+            // 1. Buscar en localStorage
+            const storedModule = localStorage.getItem(`module_${moduleName}`);
+            if (!storedModule) {
+                throw new Error(`Módulo '${moduleName}' no encontrado en localStorage. Ejecuta el instalador primero.`);
+            }
+
+            const moduleData = JSON.parse(storedModule);
+            
+            // 2. Crear contexto de módulo
+            const module = {
+                exports: {},
+                loaded: false,
+                id: moduleName
+            };
+
+            // 3. Función require para dependencias internas
+            const require = (dep) => {
+                if (this.cache.has(dep)) {
+                    return this.cache.get(dep);
+                }
+                throw new Error(`Dependencia '${dep}' no cargada para módulo '${moduleName}'`);
+            };
+
+            // 4. Función para simular export
+            const exportFn = (exports) => {
+                if (typeof exports === 'object' && exports !== null) {
+                    Object.assign(module.exports, exports);
+                }
+                return exports;
+            };
+
+            // 5. Ejecutar el código del módulo
+            const factoryCode = `
+                return (function(module, exports, require, __export) {
+                    ${moduleData.code}
+                    return module.exports;
+                });
+            `;
+
+            const factory = new Function(factoryCode)();
+            const result = factory(module, module.exports, require, exportFn);
+
+            // 6. Manejar diferentes estilos de exportación
+            if (result !== undefined) {
+                module.exports = result;
+            }
+
+            module.loaded = true;
+            
+            console.log(`✅ Módulo '${moduleName}' cargado correctamente`);
+            return module.exports;
+
+        } catch (error) {
+            console.error(`❌ Error cargando módulo '${moduleName}':`, error);
+            throw new Error(`Failed to load module '${moduleName}': ${error.message}`);
+        }
+    }
+
+    // Cargar múltiples módulos en paralelo
+    async importAll(moduleNames) {
+        const imports = moduleNames.map(name => this.import(name));
+        const results = await Promise.allSettled(imports);
+        
+        const modules = {};
+        results.forEach((result, index) => {
+            const moduleName = moduleNames[index];
+            if (result.status === 'fulfilled') {
+                modules[moduleName] = result.value;
+            } else {
+                console.warn(`⚠️ No se pudo cargar '${moduleName}':`, result.reason);
+                modules[moduleName] = null;
+            }
+        });
+        
+        return modules;
+    }
+
+    // Verificar si un módulo está instalado
+    isInstalled(moduleName) {
+        return localStorage.getItem(`module_${moduleName}`) !== null;
+    }
+
+    // Listar todos los módulos instalados
+    listInstalledModules() {
+        const modules = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('module_')) {
+                const name = key.replace('module_', '');
+                try {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    modules.push({
+                        name: name,
+                        version: data.version || '1.0.0',
+                        timestamp: data.timestamp,
+                        size: new Blob([data.code]).size
+                    });
+                } catch (e) {
+                    console.warn(`Módulo corrupto: ${name}`);
+                }
+            }
+        }
+        return modules;
+    }
+
+    // Obtener información de un módulo específico
+    getModuleInfo(moduleName) {
+        const stored = localStorage.getItem(`module_${moduleName}`);
+        if (!stored) return null;
+        
+        try {
+            const data = JSON.parse(stored);
+            return {
+                name: moduleName,
+                version: data.version || '1.0.0',
+                timestamp: data.timestamp,
+                codeSize: new Blob([data.code]).size,
+                installed: true
+            };
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Limpiar cache de módulos
+    clearCache() {
+        this.cache.clear();
+        this.importPromises.clear();
+        console.log('🔄 Cache de módulos limpiado');
+    }
+
+    // Eliminar módulo específico
+    removeModule(moduleName) {
+        localStorage.removeItem(`module_${moduleName}`);
+        this.cache.delete(moduleName);
+        this.importPromises.delete(moduleName);
+    }
+
+    // Obtener uso de almacenamiento
+    getStorageUsage() {
+        let totalSize = 0;
+        let moduleCount = 0;
+        
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('module_')) {
+                const value = localStorage.getItem(key);
+                totalSize += key.length + value.length;
+                moduleCount++;
+            }
+        }
+        
+        return {
+            moduleCount,
+            totalSize,
+            totalSizeKB: (totalSize / 1024).toFixed(2)
+        };
+    }
+}
+
+// Crear instancia global
+const moduleSystem = new ModuleSystem();
+
+// Polyfill para window.import (similar a dynamic import)
+window.import = function(moduleName) {
+    return moduleSystem.import(moduleName);
+};
+
+// Exponer el sistema de módulos globalmente
+window.moduleSystem = moduleSystem;
+ 
+///////////////////////////
+
+
+        // Aplicación principal que usa el polyfill
+        class App {
+            constructor() {
+                this.loadedModules = {};
+                this.consoleElement = document.getElementById('app-console');
+                this.init();
+            }
+
+            async init() {
+                this.log('🔧 Inicializando aplicación...');
+                await this.updateModulesList();
+                await this.updateStorageStats();
+                this.log('✅ Aplicación lista');
+            }
+
+            // Usar el polyfill para importar módulos
+            async loadModule(moduleName) {
+                try {
+                    this.log(`📦 Cargando módulo: ${moduleName}`);
+                    
+                    // ¡Usando el polyfill!
+                    const module = await window.import(moduleName);
+                    this.loadedModules[moduleName] = module;
+                    
+                    this.log(`✅ ${moduleName} cargado correctamente`, 'success');
+                    return module;
+                    
+                } catch (error) {
+                    this.log(`❌ Error cargando ${moduleName}: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+
+            async loadAllModules() {
+                const moduleNames = [
+                    'math-utils',
+                    'dom-manager', 
+                    'storage-pro',
+                    'http-client',
+                    'validation-suite'
+                ];
+
+                this.log('🚀 Cargando todos los módulos...');
+                
+                for (const moduleName of moduleNames) {
+                    if (moduleSystem.isInstalled(moduleName)) {
+                        await this.loadModule(moduleName);
+                    } else {
+                        this.log(`⚠️ ${moduleName} no instalado`, 'warning');
+                    }
+                }
+                
+                this.log('🎉 Todos los módulos cargados');
+                await this.updateModulesList();
+                this.loadFeatures();
+            }
+
+            async updateModulesList() {
+                const modulesList = document.getElementById('modules-list');
+                const installed = moduleSystem.listInstalledModules();
+                
+                if (installed.length === 0) {
+                    modulesList.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: #64748b;">
+                            <div>📦 No hay módulos instalados</div>
+                            <button class="btn btn-primary" onclick="openInstaller()" 
+                                    style="margin-top: 10px; padding: 8px 16px;">
+                                Instalar Módulos
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                modulesList.innerHTML = installed.map(module => `
+                    <div class="module-card ${this.loadedModules[module.name] ? 'installed' : ''}">
+                        <div style="display: flex; justify-content: between; align-items: start;">
+                            <strong>${module.name}</strong>
+                            <span class="status-badge ${this.loadedModules[module.name] ? 'status-installed' : 'status-missing'}">
+                                ${this.loadedModules[module.name] ? '✅ Cargado' : '📥 No cargado'}
+                            </span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">
+                            v${module.version} • ${(module.size / 1024).toFixed(1)} KB
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            async updateStorageStats() {
+                const stats = moduleSystem.getStorageUsage();
+                const statsElement = document.getElementById('storage-stats');
+                
+                statsElement.innerHTML = `
+                    <div style="font-size: 0.9rem;">
+                        <div>📦 Módulos: ${stats.moduleCount}</div>
+                        <div>💾 Espacio: ${stats.totalSizeKB} KB</div>
+                        <div style="margin-top: 10px;">
+                            <button class="btn btn-outline" onclick="moduleSystem.clearCache()" 
+                                    style="padding: 4px 8px; font-size: 0.8rem;">
+                                🗑️ Limpiar Cache
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            loadFeatures() {
+                const featuresGrid = document.getElementById('features-grid');
+                const features = [];
+
+                if (this.loadedModules['math-utils']) {
+                    features.push({
+                        icon: '🧮',
+                        title: 'Math Utils',
+                        description: 'Operaciones matemáticas avanzadas'
+                    });
+                }
+
+                if (this.loadedModules['dom-manager']) {
+                    features.push({
+                        icon: '🎨',
+                        title: 'DOM Manager',
+                        description: 'Gestión avanzada de interfaz'
+                    });
+                }
+
+                if (this.loadedModules['storage-pro']) {
+                    features.push({
+                        icon: '💾',
+                        title: 'Storage Pro',
+                        description: 'Almacenamiento con cifrado'
+                    });
+                }
+
+                if (this.loadedModules['http-client']) {
+                    features.push({
+                        icon: '🌐',
+                        title: 'HTTP Client',
+                        description: 'Peticiones con cache y retry'
+                    });
+                }
+
+                if (this.loadedModules['validation-suite']) {
+                    features.push({
+                        icon: '✅',
+                        title: 'Validation Suite',
+                        description: 'Validación de datos y formularios'
+                    });
+                }
+
+                featuresGrid.innerHTML = features.map(feature => `
+                    <div class="feature-card">
+                        <div class="feature-icon">${feature.icon}</div>
+                        <h4>${feature.title}</h4>
+                        <p style="font-size: 0.9rem; color: #64748b;">${feature.description}</p>
+                    </div>
+                `).join('');
+            }
+
+            log(message, type = 'info') {
+                const line = document.createElement('div');
+                line.className = `console-line console-${type}`;
+                line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                this.consoleElement.appendChild(line);
+                this.consoleElement.scrollTop = this.consoleElement.scrollHeight;
+            }
+
+            clearConsole() {
+                this.consoleElement.innerHTML = '<div class="console-line">💻 Consola limpiada...</div>';
+            }
+        }
+
+        // Funciones globales
+        const app = new App();
+
+        async function loadAllModules() {
+            await app.loadAllModules();
+        }
+
+        function openInstaller() {
+            window.location.href = 'install.html';
+        }
+
+        function clearConsole() {
+            app.clearConsole();
+        }
+
+        // Funciones de prueba para los módulos
+        async function testMathModule() {
+            try {
+                const math = await window.import('math-utils');
+                app.log('🧮 Probando Math Utils...');
+                
+                const resultados = [
+                    `15 + 25 = ${math.sumar(15, 25)}`,
+                    `7 * 8 = ${math.multiplicar(7, 8)}`,
+                    `¿17 es primo? ${math.esPrimo(17) ? 'Sí' : 'No'}`,
+                    `100°F a Celsius: ${math.fahrenheitToCelsius(100).toFixed(1)}°C`
+                ];
+                
+                resultados.forEach(result => app.log(result, 'success'));
+                
+            } catch (error) {
+                app.log(`❌ Error probando Math: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDOMModule() {
+            try {
+                const dom = await window.import('dom-manager');
+                app.log('🎨 Probando DOM Manager...');
+                
+                // Crear un elemento de prueba
+                const testElement = dom.crearElemento('div', {
+                    className: 'test-element',
+                    style: 'background: #dbeafe; padding: 10px; border-radius: 4px; margin: 10px 0;'
+                }, ['¡Elemento creado con DOM Manager!']);
+                
+                app.consoleElement.appendChild(testElement);
+                app.log('✅ Elemento DOM creado correctamente', 'success');
+                
+            } catch (error) {
+                app.log(`❌ Error probando DOM: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStorageModule() {
+            try {
+                const storage = await window.import('storage-pro');
+                app.log('💾 Probando Storage Pro...');
+                
+                // Guardar datos de prueba
+                const testData = {
+                    timestamp: new Date().toISOString(),
+                    message: 'Hola desde Storage Pro!',
+                    number: 42
+                };
+                
+                storage.guardar('test_data', testData);
+                const loadedData = storage.cargar('test_data');
+                
+                app.log(`✅ Datos guardados y cargados: ${loadedData.message}`, 'success');
+                app.log(`📊 Uso de storage: ${storage.getUsoStorage()} bytes`, 'success');
+                
+            } catch (error) {
+                app.log(`❌ Error probando Storage: ${error.message}`, 'error');
+            }
+        }
+
+        async function testHTTPModule() {
+            try {
+                const http = await window.import('http-client');
+                app.log('🌐 Probando HTTP Client...');
+                
+                // Hacer una petición de prueba
+                const data = await http.get('https://jsonplaceholder.typicode.com/todos/1');
+                app.log(`✅ Petición HTTP exitosa: "${data.title}"`, 'success');
+                
+            } catch (error) {
+                app.log(`❌ Error probando HTTP: ${error.message}`, 'error');
+            }
+        }
+
+        // Inicializar cuando se cargue la página
+        document.addEventListener('DOMContentLoaded', () => {
+            app.log('🚀 Aplicación iniciada con polyfill de módulos');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi App PWA</title>
+    <style>
+        /* Estilos minimalistas para la app principal */
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .module-status {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-header">
+        <h1>🚀 Mi App PWA</h1>
+        <button onclick="window.location.href='install.html'">
+            ⚙️ Gestionar Librerías
+        </button>
+    </div>
+
+    <div class="module-status" id="module-status">
+        <h3>Estado de Módulos</h3>
+        <div id="modules-list"></div>
+    </div>
+
+    <div id="app-content">
+        <!-- La aplicación principal carga aquí -->
+    </div>
+
+    <script>
+        // Sistema de módulos para la app principal
+        class AppModuleSystem {
+            constructor() {
+                this.modules = new Map();
+            }
+
+            async loadModule(name) {
+                try {
+                    const stored = localStorage.getItem(`module_${name}`);
+                    if (!stored) {
+                        throw new Error(`Módulo ${name} no encontrado. <a href="install.html">Instalar ahora</a>`);
+                    }
+
+                    const moduleData = JSON.parse(stored);
+                    const module = { exports: {} };
+                    
+                    // Ejecutar el código del módulo
+                    const factory = new Function('module', 'exports', moduleData.code);
+                    factory(module, module.exports);
+                    
+                    this.modules.set(name, module.exports);
+                    return module.exports;
+                    
+                } catch (error) {
+                    console.error(`Error cargando módulo ${name}:`, error);
+                    throw error;
+                }
+            }
+
+            getModule(name) {
+                return this.modules.get(name);
+            }
+
+            listInstalledModules() {
+                const modules = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('module_')) {
+                        const name = key.replace('module_', '');
+                        try {
+                            const data = JSON.parse(localStorage.getItem(key));
+                            modules.push({
+                                name: name,
+                                version: data.version,
+                                installed: true
+                            });
+                        } catch (e) {
+                            console.warn(`Módulo corrupto: ${name}`);
+                        }
+                    }
+                }
+                return modules;
+            }
+        }
+
+        // Inicializar y cargar la aplicación
+        const appModules = new AppModuleSystem();
+
+        async function initApp() {
+            try {
+                // Mostrar módulos instalados
+                const installed = appModules.listInstalledModules();
+                const modulesList = document.getElementById('modules-list');
+                
+                modulesList.innerHTML = installed.length > 0 
+                    ? installed.map(m => `
+                          <div>✅ ${m.name} v${m.version}</div>
+                      `).join('')
+                    : '<div>❌ No hay módulos instalados. <a href="install.html">Instalar ahora</a></div>';
+
+                // Cargar módulos necesarios para la app
+                if (installed.length > 0) {
+                    await loadApplicationModules();
+                }
+                
+            } catch (error) {
+                console.error('Error inicializando app:', error);
+            }
+        }
+
+        async function loadApplicationModules() {
+            try {
+                // Cargar módulos en paralelo
+                const modulesToLoad = [
+                    'math-utils',
+                    'dom-manager', 
+                    'storage-pro',
+                    'http-client',
+                    'validation-suite'
+                ];
+
+                for (const moduleName of modulesToLoad) {
+                    try {
+                        await appModules.loadModule(moduleName);
+                        console.log(`✅ ${moduleName} cargado`);
+                    } catch (error) {
+                        console.warn(`⚠️ ${moduleName} no disponible`);
+                    }
+                }
+
+                // Inicializar la aplicación con los módulos cargados
+                startApplication();
+                
+            } catch (error) {
+                console.error('Error cargando módulos:', error);
+            }
+        }
+
+        function startApplication() {
+            const appContent = document.getElementById('app-content');
+            
+            // Usar módulos cargados
+            const domManager = appModules.getModule('dom-manager');
+            const mathUtils = appModules.getModule('math-utils');
+            const storagePro = appModules.getModule('storage-pro');
+            
+            if (domManager && mathUtils) {
+                appContent.innerHTML = `
+                    <div style="background: white; padding: 20px; border-radius: 8px;">
+                        <h2>¡Aplicación Funcionando!</h2>
+                        <p>Los módulos han sido cargados correctamente desde localStorage.</p>
+                        <p>Ejemplo: 15 + 25 = ${mathUtils.sumar(15, 25)}</p>
+                        <p>¿15 es primo? ${mathUtils.esPrimo(15) ? 'Sí' : 'No'}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Iniciar la aplicación cuando se cargue la página
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

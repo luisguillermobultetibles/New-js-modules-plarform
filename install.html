@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instalador de Librerías - Mi App PWA</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-100: #f3f4f6;
+            --gray-800: #1f2937;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .installer-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: var(--gray-800);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--gray-100);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .librerias-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .libreria-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .libreria-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .libreria-card.installed {
+            border-color: var(--success);
+            background: #f0fdf4;
+        }
+        
+        .libreria-header {
+            display: flex;
+            justify-content: between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+        
+        .libreria-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+        
+        .libreria-version {
+            background: var(--primary);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+        
+        .libreria-description {
+            color: #6b7280;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .libreria-features {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+        
+        .libreria-features li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .libreria-features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: bold;
+        }
+        
+        .libreria-size {
+            color: #9ca3af;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px;
+            background: var(--gray-100);
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+        
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .badge-warning {
+            background: var(--warning);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .librerias-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-actions {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="installer-container">
+        <div class="header">
+            <h1>🛠️ Instalador de Librerías</h1>
+            <p>Configura las dependencias necesarias para tu aplicación</p>
+        </div>
+        
+        <div class="content">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-libs">0</div>
+                    <div>Librerías Disponibles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="installed-libs">0</div>
+                    <div>Instaladas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-size">0 KB</div>
+                    <div>Espacio Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="storage-free">0%</div>
+                    <div>Storage Libre</div>
+                </div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="installation-progress"></div>
+            </div>
+            
+            <div id="status-message" class="status-message"></div>
+            
+            <div class="librerias-grid" id="librerias-container">
+                <!-- Las librerías se cargan dinámicamente aquí -->
+            </div>
+        </div>
+        
+        <div class="footer-actions">
+            <div>
+                <button class="btn btn-outline" onclick="instalarTodas()">
+                    📦 Instalar Todas
+                </button>
+                <button class="btn btn-outline" onclick="desinstalarTodas()">
+                    🗑️ Limpiar Todo
+                </button>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="finalizarInstalacion()">
+                    🚀 Ir a la Aplicación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+class LibreriaInstaller {
+    constructor() {
+        this.librerias = {
+            'math-utils': {
+                name: 'Math Utils',
+                version: '2.1.0',
+                description: 'Utilidades matemáticas avanzadas para cálculos científicos y financieros',
+                size: '4.2 KB',
+                features: [
+                    'Operaciones trigonométricas',
+                    'Cálculos financieros',
+                    'Estadísticas básicas',
+                    'Conversiones de unidades'
+                ],
+                code: `
+                    module.exports = {
+                        // Operaciones básicas
+                        sumar: (a, b) => a + b,
+                        restar: (a, b) => a - b,
+                        multiplicar: (a, b) => a * b,
+                        dividir: (a, b) => a / b,
+                        
+                        // Constantes
+                        PI: 3.14159265359,
+                        E: 2.71828182846,
+                        PHI: 1.61803398875,
+                        
+                        // Trigonometría
+                        seno: (grados) => Math.sin(grados * Math.PI / 180),
+                        coseno: (grados) => Math.cos(grados * Math.PI / 180),
+                        tangente: (grados) => Math.tan(grados * Math.PI / 180),
+                        
+                        // Finanzas
+                        calcularInteres: (capital, tasa, tiempo) => 
+                            capital * Math.pow(1 + tasa, tiempo),
+                        
+                        // Estadísticas
+                        promedio: (array) => array.reduce((a, b) => a + b, 0) / array.length,
+                        mediana: (array) => {
+                            const sorted = [...array].sort((a, b) => a - b);
+                            const mid = Math.floor(sorted.length / 2);
+                            return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+                        },
+                        
+                        // Utilidades
+                        esPar: n => n % 2 === 0,
+                        esPrimo: num => {
+                            if (num <= 1) return false;
+                            if (num <= 3) return true;
+                            if (num % 2 === 0 || num % 3 === 0) return false;
+                            for (let i = 5; i * i <= num; i += 6) {
+                                if (num % i === 0 || num % (i + 2) === 0) return false;
+                            }
+                            return true;
+                        },
+                        
+                        // Conversiones
+                        celsiusToFahrenheit: (c) => (c * 9/5) + 32,
+                        fahrenheitToCelsius: (f) => (f - 32) * 5/9,
+                        kmToMillas: (km) => km * 0.621371,
+                        millasToKm: (millas) => millas * 1.60934
+                    };
+                `
+            },
+
+            'dom-manager': {
+                name: 'DOM Manager',
+                version: '1.4.2',
+                description: 'Gestión avanzada del DOM con componentes reutilizables y animaciones',
+                size: '6.8 KB',
+                features: [
+                    'Creación dinámica de elementos',
+                    'Sistema de componentes',
+                    'Animaciones CSS3',
+                    'Gestión de eventos'
+                ],
+                code: `
+                    module.exports = {
+                        // Creación de elementos
+                        crearElemento: (tag, atributos = {}, hijos = []) => {
+                            const elemento = document.createElement(tag);
+                            
+                            // Atributos
+                            Object.entries(atributos).forEach(([key, value]) => {
+                                if (key === 'className') {
+                                    elemento.className = value;
+                                } else if (key === 'textContent') {
+                                    elemento.textContent = value;
+                                } else if (key.startsWith('on')) {
+                                    elemento.addEventListener(key.slice(2).toLowerCase(), value);
+                                } else {
+                                    elemento.setAttribute(key, value);
+                                }
+                            });
+                            
+                            // Hijos
+                            hijos.forEach(hijo => {
+                                if (typeof hijo === 'string') {
+                                    elemento.appendChild(document.createTextNode(hijo));
+                                } else {
+                                    elemento.appendChild(hijo);
+                                }
+                            });
+                            
+                            return elemento;
+                        },
+                        
+                        // Componentes
+                        Componente: class {
+                            constructor(selector) {
+                                this.elemento = document.querySelector(selector);
+                                this.estado = {};
+                                this.init();
+                            }
+                            
+                            init() {}
+                            render() {}
+                            
+                            setEstado(nuevoEstado) {
+                                this.estado = { ...this.estado, ...nuevoEstado };
+                                this.render();
+                            }
+                        },
+                        
+                        // Animaciones
+                        animar: (elemento, animacion, duracion = 300) => {
+                            return new Promise((resolve) => {
+                                elemento.style.animation = \`\${animacion} \${duracion}ms ease-in-out\`;
+                                setTimeout(() => {
+                                    elemento.style.animation = '';
+                                    resolve();
+                                }, duracion);
+                            });
+                        },
+                        
+                        fadeIn: (elemento, duracion = 300) => 
+                            this.animar(elemento, 'fadeIn', duracion),
+                            
+                        slideDown: (elemento, duracion = 300) => 
+                            this.animar(elemento, 'slideDown', duracion),
+                        
+                        // Utilidades
+                        limpiarElemento: (selector) => {
+                            const elemento = document.querySelector(selector);
+                            if (elemento) elemento.innerHTML = '';
+                        },
+                        
+                        ocultarElemento: (selector) => {
+                            const elemento = document.querySelector(selector);
+                            if (elemento) elemento.style.display = 'none';
+                        },
+                        
+                        mostrarElemento: (selector, display = 'block') => {
+                            const elemento = document.querySelector(selector);
+                            if (elemento) elemento.style.display = display;
+                        },
+                        
+                        // Eventos
+                        delegarEvento: (selector, evento, callback) => {
+                            document.addEventListener(evento, (e) => {
+                                if (e.target.matches(selector)) {
+                                    callback(e);
+                                }
+                            });
+                        }
+                    };
+                `
+            },
+
+            'storage-pro': {
+                name: 'Storage Pro',
+                version: '3.0.1',
+                description: 'Sistema de almacenamiento avanzado con cifrado y compresión',
+                size: '5.1 KB',
+                features: [
+                    'Cifrado AES básico',
+                    'Compresión JSON',
+                    'Manejo de errores',
+                    'Sistema de cuotas'
+                ],
+                code: `
+                    module.exports = {
+                        // Almacenamiento básico
+                        guardar: (clave, valor, cifrar = false) => {
+                            try {
+                                let data = valor;
+                                if (cifrar) {
+                                    data = this._cifrar(JSON.stringify(valor));
+                                } else {
+                                    data = JSON.stringify(valor);
+                                }
+                                localStorage.setItem(clave, data);
+                                return true;
+                            } catch (error) {
+                                console.error('Error guardando:', error);
+                                return false;
+                            }
+                        },
+                        
+                        cargar: (clave, valorPorDefecto = null, cifrado = false) => {
+                            try {
+                                const item = localStorage.getItem(clave);
+                                if (!item) return valorPorDefecto;
+                                
+                                let data = item;
+                                if (cifrado) {
+                                    data = JSON.parse(this._descifrar(item));
+                                } else {
+                                    data = JSON.parse(item);
+                                }
+                                return data;
+                            } catch (error) {
+                                console.error('Error cargando:', error);
+                                return valorPorDefecto;
+                            }
+                        },
+                        
+                        eliminar: (clave) => {
+                            localStorage.removeItem(clave);
+                        },
+                        
+                        limpiar: () => {
+                            localStorage.clear();
+                        },
+                        
+                        // Utilidades avanzadas
+                        obtenerTodos: (prefijo = '') => {
+                            const items = {};
+                            for (let i = 0; i < localStorage.length; i++) {
+                                const clave = localStorage.key(i);
+                                if (clave.startsWith(prefijo)) {
+                                    items[clave] = this.cargar(clave);
+                                }
+                            }
+                            return items;
+                        },
+                        
+                        existe: (clave) => {
+                            return localStorage.getItem(clave) !== null;
+                        },
+                        
+                        // Cifrado básico (NO usar para datos sensibles reales)
+                        _cifrar: (texto) => {
+                            return btoa(unescape(encodeURIComponent(texto)));
+                        },
+                        
+                        _descifrar: (textoCifrado) => {
+                            return decodeURIComponent(escape(atob(textoCifrado)));
+                        },
+                        
+                        // Información de almacenamiento
+                        getUsoStorage: () => {
+                            let total = 0;
+                            for (let i = 0; i < localStorage.length; i++) {
+                                const clave = localStorage.key(i);
+                                const valor = localStorage.getItem(clave);
+                                total += clave.length + valor.length;
+                            }
+                            return total;
+                        },
+                        
+                        getEspacioDisponible: () => {
+                            // Estimación aproximada (5MB típico en navegadores)
+                            const maxStorage = 5 * 1024 * 1024;
+                            const usado = this.getUsoStorage();
+                            return maxStorage - usado;
+                        }
+                    };
+                `
+            },
+
+            'http-client': {
+                name: 'HTTP Client',
+                version: '2.2.0',
+                description: 'Cliente HTTP con soporte para caché, reintentos y timeouts',
+                size: '7.3 KB',
+                features: [
+                    'Peticiones GET/POST/PUT/DELETE',
+                    'Sistema de caché',
+                    'Reintentos automáticos',
+                    'Manejo de timeouts'
+                ],
+                code: `
+                    module.exports = {
+                        config: {
+                            timeout: 5000,
+                            maxRetries: 3,
+                            cacheDuration: 300000 // 5 minutos
+                        },
+                        
+                        // Peticiones básicas
+                        get: async (url, opciones = {}) => {
+                            return this._request('GET', url, null, opciones);
+                        },
+                        
+                        post: async (url, datos, opciones = {}) => {
+                            return this._request('POST', url, datos, opciones);
+                        },
+                        
+                        put: async (url, datos, opciones = {}) => {
+                            return this._request('PUT', url, datos, opciones);
+                        },
+                        
+                        delete: async (url, opciones = {}) => {
+                            return this._request('DELETE', url, null, opciones);
+                        },
+                        
+                        // Petición principal
+                        _request: async (method, url, datos = null, opciones = {}) => {
+                            const config = { ...this.config, ...opciones };
+                            
+                            // Verificar caché para GET
+                            if (method === 'GET' && config.cache) {
+                                const cached = this._getFromCache(url);
+                                if (cached) return cached;
+                            }
+                            
+                            for (let intento = 0; intento <= config.maxRetries; intento++) {
+                                try {
+                                    const controller = new AbortController();
+                                    const timeoutId = setTimeout(() => controller.abort(), config.timeout);
+                                    
+                                    const options = {
+                                        method,
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            ...config.headers
+                                        },
+                                        signal: controller.signal
+                                    };
+                                    
+                                    if (datos && method !== 'GET') {
+                                        options.body = JSON.stringify(datos);
+                                    }
+                                    
+                                    const response = await fetch(url, options);
+                                    clearTimeout(timeoutId);
+                                    
+                                    if (!response.ok) {
+                                        throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
+                                    }
+                                    
+                                    const result = await response.json();
+                                    
+                                    // Guardar en caché si es GET
+                                    if (method === 'GET' && config.cache) {
+                                        this._saveToCache(url, result);
+                                    }
+                                    
+                                    return result;
+                                    
+                                } catch (error) {
+                                    if (intento === config.maxRetries) {
+                                        throw new Error(\`Falló después de \${config.maxRetries + 1} intentos: \${error.message}\`);
+                                    }
+                                    
+                                    // Esperar antes del reintento (exponencial backoff)
+                                    await new Promise(resolve => 
+                                        setTimeout(resolve, 1000 * Math.pow(2, intento))
+                                    );
+                                }
+                            }
+                        },
+                        
+                        // Sistema de caché
+                        _getFromCache: (url) => {
+                            try {
+                                const cached = localStorage.getItem(\`cache_\${btoa(url)}\`);
+                                if (!cached) return null;
+                                
+                                const { data, timestamp } = JSON.parse(cached);
+                                if (Date.now() - timestamp > this.config.cacheDuration) {
+                                    this._removeFromCache(url);
+                                    return null;
+                                }
+                                
+                                return data;
+                            } catch {
+                                return null;
+                            }
+                        },
+                        
+                        _saveToCache: (url, data) => {
+                            try {
+                                const cacheItem = {
+                                    data,
+                                    timestamp: Date.now()
+                                };
+                                localStorage.setItem(\`cache_\${btoa(url)}\`, JSON.stringify(cacheItem));
+                            } catch (error) {
+                                console.warn('No se pudo guardar en caché:', error);
+                            }
+                        },
+                        
+                        _removeFromCache: (url) => {
+                            localStorage.removeItem(\`cache_\${btoa(url)}\`);
+                        },
+                        
+                        limpiarCache: () => {
+                            Object.keys(localStorage)
+                                .filter(key => key.startsWith('cache_'))
+                                .forEach(key => localStorage.removeItem(key));
+                        }
+                    };
+                `
+            },
+
+            'validation-suite': {
+                name: 'Validation Suite',
+                version: '1.3.0',
+                description: 'Suite completa de validación para formularios y datos',
+                size: '8.1 KB',
+                features: [
+                    'Validación de email, teléfono, URL',
+                    'Validación de contraseñas seguras',
+                    'Sanitización de datos',
+                    'Mensajes multi-idioma'
+                ],
+                code: `
+                    module.exports = {
+                        // Validaciones básicas
+                        esEmail: (email) => {
+                            return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);
+                        },
+                        
+                        esURL: (url) => {
+                            try {
+                                new URL(url);
+                                return true;
+                            } catch {
+                                return false;
+                            }
+                        },
+                        
+                        esTelefono: (telefono) => {
+                            return /^[+]?[(]?[0-9]{1,4}[)]?[-\\s./0-9]{8,}$/.test(telefono);
+                        },
+                        
+                        esNumero: (n) => !isNaN(parseFloat(n)) && isFinite(n),
+                        
+                        estaVacio: (str) => !str || str.trim().length === 0,
+                        
+                        // Validación de contraseña
+                        esContraseñaSegura: (password) => {
+                            const checks = {
+                                longitud: password.length >= 8,
+                                mayuscula: /[A-Z]/.test(password),
+                                minuscula: /[a-z]/.test(password),
+                                numero: /[0-9]/.test(password),
+                                especial: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+                            };
+                            
+                            return {
+                                valida: Object.values(checks).every(Boolean),
+                                detalles: checks
+                            };
+                        },
+                        
+                        // Sanitización
+                        sanitizarHTML: (str) => {
+                            const div = document.createElement('div');
+                            div.textContent = str;
+                            return div.innerHTML;
+                        },
+                        
+                        sanitizarInput: (input) => {
+                            return typeof input === 'string' 
+                                ? input.trim().replace(/<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>/gi, '')
+                                : input;
+                        },
+                        
+                        // Validadores compuestos
+                        validarFormulario: (campos, valores) => {
+                            const errores = {};
+                            
+                            Object.keys(campos).forEach(campo => {
+                                const valor = valores[campo];
+                                const reglas = campos[campo];
+                                const error = this._aplicarReglas(valor, reglas);
+                                
+                                if (error) {
+                                    errores[campo] = error;
+                                }
+                            });
+                            
+                            return {
+                                valido: Object.keys(errores).length === 0,
+                                errores
+                            };
+                        },
+                        
+                        _aplicarReglas: (valor, reglas) => {
+                            for (const [regla, parametro] of Object.entries(reglas)) {
+                                switch (regla) {
+                                    case 'requerido':
+                                        if (this.estaVacio(valor)) return 'Este campo es requerido';
+                                        break;
+                                    case 'email':
+                                        if (!this.estaVacio(valor) && !this.esEmail(valor)) 
+                                            return 'Email inválido';
+                                        break;
+                                    case 'minLength':
+                                        if (valor.length < parametro) 
+                                            return \`Mínimo \${parametro} caracteres\`;
+                                        break;
+                                    case 'maxLength':
+                                        if (valor.length > parametro) 
+                                            return \`Máximo \${parametro} caracteres\`;
+                                        break;
+                                    case 'pattern':
+                                        if (!parametro.test(valor)) 
+                                            return 'Formato inválido';
+                                        break;
+                                }
+                            }
+                            return null;
+                        }
+                    };
+                `
+            }
+        };
+        
+        this.init();
+    }
+
+    init() {
+        this.cargarInterfaz();
+        this.actualizarEstadisticas();
+    }
+
+    cargarInterfaz() {
+        const container = document.getElementById('librerias-container');
+        container.innerHTML = '';
+
+        Object.entries(this.librerias).forEach(([id, libreria]) => {
+            const estaInstalada = this.estaInstalada(id);
+            const card = this.crearCardLibreria(id, libreria, estaInstalada);
+            container.appendChild(card);
+        });
+    }
+
+    crearCardLibreria(id, libreria, instalada) {
+        const card = document.createElement('div');
+        card.className = `libreria-card ${instalada ? 'installed' : ''}`;
+        
+        card.innerHTML = `
+            <div class="libreria-header">
+                <div class="libreria-title">${libreria.name}</div>
+                <div class="libreria-version">v${libreria.version}</div>
+            </div>
+            <div class="libreria-description">${libreria.description}</div>
+            <ul class="libreria-features">
+                ${libreria.features.map(feature => `<li>${feature}</li>`).join('')}
+            </ul>
+            <div class="libreria-size">Tamaño: ${libreria.size}</div>
+            <div class="actions">
+                ${instalada ? 
+                    `<span class="badge badge-success">✅ Instalada</span>
+                     <button class="btn btn-danger" onclick="installer.reinstalar('${id}')">
+                         🔄 Reinstalar
+                     </button>
+                     <button class="btn btn-outline" onclick="installer.desinstalar('${id}')">
+                         🗑️ Desinstalar
+                     </button>` :
+                    `<button class="btn btn-primary" onclick="installer.instalar('${id}')">
+                         📥 Instalar
+                     </button>`
+                }
+            </div>
+        `;
+        
+        return card;
+    }
+
+    estaInstalada(id) {
+        return localStorage.getItem(`module_${id}`) !== null;
+    }
+
+    async instalar(id) {
+        try {
+            const libreria = this.librerias[id];
+            if (!libreria) throw new Error('Librería no encontrada');
+
+            // Simular proceso de instalación
+            this.mostrarMensaje(`Instalando ${libreria.name}...`, 'status-success');
+            
+            // Guardar en localStorage
+            const moduleData = {
+                code: libreria.code,
+                timestamp: Date.now(),
+                version: libreria.version,
+                name: libreria.name
+            };
+            
+            localStorage.setItem(`module_${id}`, JSON.stringify(moduleData));
+            
+            // Pequeña demora para efecto visual
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            this.mostrarMensaje(`✅ ${libreria.name} instalada correctamente`, 'status-success');
+            this.actualizarEstadisticas();
+            this.cargarInterfaz();
+            
+        } catch (error) {
+            this.mostrarMensaje(`❌ Error instalando: ${error.message}`, 'status-error');
+        }
+    }
+
+    desinstalar(id) {
+        const libreria = this.librerias[id];
+        localStorage.removeItem(`module_${id}`);
+        this.mostrarMensaje(`🗑️ ${libreria.name} desinstalada`, 'status-success');
+        this.actualizarEstadisticas();
+        this.cargarInterfaz();
+    }
+
+    reinstalar(id) {
+        this.desinstalar(id);
+        setTimeout(() => this.instalar(id), 500);
+    }
+
+    async instalarTodas() {
+        const ids = Object.keys(this.librerias);
+        const noInstaladas = ids.filter(id => !this.estaInstalada(id));
+        
+        if (noInstaladas.length === 0) {
+            this.mostrarMensaje('✅ Todas las librerías ya están instaladas', 'status-success');
+            return;
+        }
+
+        this.mostrarMensaje(`🚀 Instalando ${noInstaladas.length} librerías...`, 'status-success');
+        
+        for (let i = 0; i < noInstaladas.length; i++) {
+            const id = noInstaladas[i];
+            const progreso = ((i + 1) / noInstaladas.length) * 100;
+            document.getElementById('installation-progress').style.width = `${progreso}%`;
+            
+            await this.instalar(id);
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+        
+        document.getElementById('installation-progress').style.width = '100%';
+        this.mostrarMensaje('🎉 ¡Todas las librerías instaladas correctamente!', 'status-success');
+    }
+
+    desinstalarTodas() {
+        if (!confirm('¿Estás seguro de que quieres desinstalar todas las librerías?')) {
+            return;
+        }
+        
+        Object.keys(this.librerias).forEach(id => {
+            localStorage.removeItem(`module_${id}`);
+        });
+        
+        this.mostrarMensaje('🗑️ Todas las librerías han sido desinstaladas', 'status-success');
+        this.actualizarEstadisticas();
+        this.cargarInterfaz();
+        document.getElementById('installation-progress').style.width = '0%';
+    }
+
+    actualizarEstadisticas() {
+        const total = Object.keys(this.librerias).length;
+        const instaladas = Object.keys(this.librerias).filter(id => this.estaInstalada(id)).length;
+        
+        // Calcular tamaño total (estimado)
+        const tamañoTotal = Object.values(this.librerias)
+            .reduce((sum, lib) => sum + parseFloat(lib.size), 0);
+        
+        document.getElementById('total-libs').textContent = total;
+        document.getElementById('installed-libs').textContent = instaladas;
+        document.getElementById('total-size').textContent = `${tamañoTotal.toFixed(1)} KB`;
+        
+        // Calcular espacio libre (estimado)
+        const espacioUsado = (instaladas / total) * 100;
+        document.getElementById('storage-free').textContent = `${Math.round(100 - espacioUsado)}%`;
+    }
+
+    mostrarMensaje(mensaje, tipo) {
+        const element = document.getElementById('status-message');
+        element.textContent = mensaje;
+        element.className = `status-message ${tipo}`;
+        element.style.display = 'block';
+        
+        setTimeout(() => {
+            element.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// Funciones globales para los botones
+function instalarTodas() {
+    installer.instalarTodas();
+}
+
+function desinstalarTodas() {
+    installer.desinstalarTodas();
+}
+
+function finalizarInstalacion() {
+    // Redirigir a la aplicación principal
+    window.location.href = 'app.html';
+}
+
+// Inicializar el instalador
+const installer = new LibreriaInstaller();
+    </script>
+</body>
+</html>
